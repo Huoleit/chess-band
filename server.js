@@ -23,6 +23,8 @@ var redis = new Redis(redis_address);
 var redis_subscribers = {};
 var channel_history_max = 10;
 
+var needToUpdate;
+var updateFlag = false;
 app.use(express.static('public'));
 app.get('/health', function (request, response) {
     response.send('ok');
@@ -45,6 +47,7 @@ add_redis_subscriber('messages');
 add_redis_subscriber('member_add');
 add_redis_subscriber('member_delete');
 add_redis_subscriber('pair');
+add_redis_subscriber('pair_termination');
 
 io.on('connection', function (socket) {
     var get_members = redis.hgetall('members').then(function (redis_members) {
@@ -104,7 +107,11 @@ io.on('connection', function (socket) {
                     button.socket_id = member.socket;
                     member.master_id = members[leastUsedKey].socket;
                     member.master_button_index = count;
-                    //redis.publish('pair', JSON.stringify(members));
+                    member.buttons[0].socket_id = members[leastUsedKey].socket;
+                    member.buttons[0].valid = true;
+                    needToUpdate = members[leastUsedKey];
+                    updateFlag = true;
+                    //
                     console.log(members[leastUsedKey]);
                     redis.hdel('members', leastUsedKey).then(function () {
                         redis.hset('members', leastUsedKey, JSON.stringify(members[leastUsedKey]));
@@ -113,10 +120,7 @@ io.on('connection', function (socket) {
                 }
                 count++;
             }
-            // console.log(leastUsedKey);
-            // console.log(members[leastUsedKey].buttons[0].valid);
-            // console.log(members[leastUsedKey].buttons[1].valid);
-            // console.log(members[leastUsedKey].buttons[2].valid);
+           
         }
 
         return redis.hset('members', socket.id, JSON.stringify(member)).then(function () {
@@ -142,6 +146,13 @@ io.on('connection', function (socket) {
         io.emit('message_history', messages);
 
         redis.publish('member_add', JSON.stringify(member));
+        if(updateFlag)
+        {
+            redis.publish('pair', JSON.stringify(needToUpdate));
+            updateFlag = false;
+        }
+        
+        // 
 
         socket.on('send', function (message_text) {
             var date = moment.now();
@@ -156,12 +167,15 @@ io.on('connection', function (socket) {
             redis.publish('messages', message);
         });
 
-        socket.on('disconnect', function () {
-           
+        socket.on('disconnect', async function () {
+            // const slave = await redis.hget('members', socket.id);
+            // const promise = redis.hget('members', socket.id);
+            
             var get_master =
                 redis.hget('members', socket.id).then(function (slave) {
                     //console.log(slave);
                     var parze_slave = JSON.parse(slave);
+                if(!parze_slave.master_id) return null;
                    return redis.hget('members', parze_slave.master_id).then(function (master) {
                         console.log("get");
                         return JSON.parse(master);
@@ -169,6 +183,7 @@ io.on('connection', function (socket) {
                    
                 });
                var update_master = get_master.then(function(master){
+                   if(!master) return null;
                     for(let button of master.buttons)
                     {
                         if(button.socket_id==socket.id) button.valid = false;
@@ -185,9 +200,11 @@ io.on('connection', function (socket) {
                     console.log("finish");
                     console.log(values[1]);
                     redis.hdel('members', socket.id);
+                    redis.publish('member_delete', JSON.stringify(socket.id));
+                    redis.publish('pair_termination', JSON.stringify(values[1]));
                 });
                
-            redis.publish('member_delete', JSON.stringify(socket.id));
+            
         });
     }).catch(function (reason) {
         console.log('ERROR: ' + reason);

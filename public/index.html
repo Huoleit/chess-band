@@ -53,8 +53,9 @@
                         </div>
                     </div> -->
                     <div class="row">
-                        <ul >
-                            <li v-for="(button, index) in buttons"  v-bind:class="button.color" v-bind:id="'btn' + index" style="margin-right: 30px;"></li>
+                        <ul>
+                            <li v-for="(button, index) in buttons" v-bind:class="button.color" v-bind:id="'btn' + index"
+                                style="margin-right: 30px;"></li>
                         </ul>
 
                     </div>
@@ -75,28 +76,25 @@
     <script src="js/vue-focus/2.1.0/vue-focus.min.js"></script>
     <script src="js/socket.io/1.7.2/socket.io.min.js"></script>
     <script src="js/moment.js/2.17.1/moment.min.js"></script>
-    <script
-  src="https://code.jquery.com/jquery-3.4.0.min.js"
-  integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg="
-  crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.4.0.min.js"
+        integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg=" crossorigin="anonymous"></script>
 
     <script>
-         var socket = io();
+        var socket = io();
         $(document).ready(
-            function(){
+            function () {
                 $("#btn1").click(
-                    function()
-                    {
-                        $(this).removeClass( "btn-grey" ).addClass( "btn-green" );
+                    function () {
+                        $(this).removeClass("btn-grey").addClass("btn-green");
                         // console.log(moment.now());
                     }
-                    
+
                 );
 
-                
+
             }
         );
-        
+
 
         new Vue({
             el: '#app',
@@ -105,12 +103,12 @@
                 message: '',
                 messages: [],
                 members: {},
-                username:'',
-                buttons:[
-                    {"color":"btn-grey", "valid":false,"socket_id":""},
-                    {"color":"btn-grey", "valid":false,"socket_id":""},
-                    {"color":"btn-grey", "valid":false,"socket_id":""},
-                    {"color":"btn-grey", "valid":false,"socket_id":""},]
+                username: '',
+                buttons: [
+                    { "color": "btn-grey", "valid": false, "socket_id": "" },
+                    { "color": "btn-grey", "valid": false, "socket_id": "" },
+                    { "color": "btn-grey", "valid": false, "socket_id": "" },
+                    { "color": "btn-grey", "valid": false, "socket_id": "" },]
             },
             methods: {
                 send: function () {
@@ -123,22 +121,27 @@
                 formatMessageDate: function (date) {
                     return moment(date).format("h:mm:ss a");
                 },
-              
+
             },
             mounted: function () {
                 socket.on('messages', function (message) {
                     this.messages.push(message);
                 }.bind(this));
-                
+
                 // socket.on('connect',()=>{
                 //             alert("a");
                 //         });
                 socket.on('member_add', function (member) {
                     Vue.set(this.members, member.socket, member);
-                     //console.log(member);
+                    //console.log(member);
                     // console.log(socket.id);
-                    if(member.socket == socket.id)
-                    {
+                    for (button in member.buttons) {
+
+                        if (member.buttons[button].valid) {
+                            this.buttons[button].color = 'btn-green';
+                        }
+                    }
+                    if (member.socket == socket.id) {
                         this.username = member.username;
                     }
                 }.bind(this));
@@ -148,7 +151,29 @@
                 }.bind(this));
 
                 socket.on('pair', function (members) {
-                    this.members = members;
+                    console.log(members);
+                    if (members.socket == socket.id) {
+
+                        for (button in members.buttons) {
+
+                            if (members.buttons[button].valid) {
+                                this.buttons[button].color = 'btn-green';
+                            }
+                        }
+                    }
+
+                }.bind(this));
+
+                socket.on('pair_termination', function (master) {
+                    if (master.socket == socket.id) {
+                        console.log(master.buttons);
+                        for (button in master.buttons) {
+
+                            if (!master.buttons[button].valid) {
+                                this.buttons[button].color = 'btn-grey';
+                            }
+                        }
+                    }
                 }.bind(this));
 
                 socket.on('message_history', function (messages) {
@@ -157,11 +182,10 @@
 
                 socket.on('member_history', function (members) {
                     this.members = members;
-                    for(member in members)
-                    {
-                        console.log(member);
-                    }
-                    
+                    // for (member in members) {
+                    //     console.log(member);
+                    // }
+
                 }.bind(this));
             }
         });
