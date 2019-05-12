@@ -47,7 +47,6 @@ io.on('connection', function (socket) {
         for (let key in redis_members) {
             members[key] = JSON.parse(redis_members[key]);
         }
-        console.log(members);
         return members;
     });
 
@@ -158,7 +157,7 @@ io.on('connection', function (socket) {
                     await redis.hdel('members', button.socket_id);
                     redis.hset('members', button.socket_id, JSON.stringify(master));
                     let delete_information = JSON.stringify({
-                        mastre_id: button.socket_id,
+                        master_id: button.socket_id,
                         slave_id: socket.id
                     });
                     redis.publish('pair_termination', delete_information);
@@ -166,7 +165,6 @@ io.on('connection', function (socket) {
 
             }
             await redis.hdel('members', socket.id);
-            console.log(socket.id);
             redis.publish('member_delete', JSON.stringify(socket.id));
             
 
