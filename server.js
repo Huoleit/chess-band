@@ -16,6 +16,8 @@ var channel_history_max = 10;
 
 var needToUpdate;
 var updateFlag = false;
+var update_new = false;
+var new_user;
 app.use(express.static('public'));
 app.get('/health', function (request, response) {
     response.send('ok');
@@ -94,7 +96,9 @@ io.on('connection', function (socket) {
                     member.buttons[0].valid = true;
                     needToUpdate = members[leastUsedKey];
                     updateFlag = true;
-
+                    update_new = true;
+                    new_user = member;
+                    
                     redis.hdel('members', leastUsedKey).then(function () {
                         redis.hset('members', leastUsedKey, JSON.stringify(members[leastUsedKey]));
                     });
@@ -130,6 +134,11 @@ io.on('connection', function (socket) {
         if (updateFlag) {
             redis.publish('pair', JSON.stringify(needToUpdate));
             updateFlag = false;
+        }
+        if(update_new)
+        {
+            redis.publish('pair', JSON.stringify(new_user));
+            update_new = false;
         }
 
         socket.on('send', function (message_text) {
