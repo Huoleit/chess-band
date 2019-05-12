@@ -1,12 +1,3 @@
-/*
-Copyright 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at
-
-    http://aws.amazon.com/asl/
-
-or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
-*/
 var faker = require('faker');
 var moment = require('moment');
 
@@ -33,6 +24,7 @@ app.get('/health', function (request, response) {
 function isEmptyObject(obj) {
     return Object.keys(obj).length === 0;
 }
+
 function add_redis_subscriber(subscriber_key) {
     var client = new Redis(redis_address);
 
@@ -52,11 +44,10 @@ add_redis_subscriber('pair_termination');
 io.on('connection', function (socket) {
     var get_members = redis.hgetall('members').then(function (redis_members) {
         var members = {};
-        //console.log(redis_members);
-        for (var key in redis_members) {
+        for (let key in redis_members) {
             members[key] = JSON.parse(redis_members[key]);
         }
-        // console.log('Get all');
+        console.log(members);
         return members;
     });
 
@@ -71,16 +62,15 @@ io.on('connection', function (socket) {
             socket: socket.id,
             username: username,
             avatar: "//api.adorable.io/avatars/30/" + username + '.png',
-            buttons: [{ "socket_id": '', "valid": false },
+            buttons: [
+            { "socket_id": '', "valid": false },
             { "socket_id": '', "valid": false },
             { "socket_id": '', "valid": false },
             { "socket_id": '', "valid": false }],
             master_id: '',
-            master_button_index: 0,
             lastTime: 0
         };
         member.lastTime = moment.now();
-        //console.log(members);
 
         if (!isEmptyObject(members)) {
             let leastUsedKey = '';
@@ -94,38 +84,30 @@ io.on('connection', function (socket) {
                 }
 
             }
-            // console.log(members);
-            // console.log(leastTime);
+
             for (let button of members[leastUsedKey].buttons) {
-                let count = 0;
                 if (!button.valid) {
                     members[leastUsedKey].lastTime = moment.now();
-                    // console.log(key);
-                    // console.log(leastUsedKey);
-                    // console.log(members);
                     button.valid = true;
                     button.socket_id = member.socket;
                     member.master_id = members[leastUsedKey].socket;
-                    member.master_button_index = count;
                     member.buttons[0].socket_id = members[leastUsedKey].socket;
                     member.buttons[0].valid = true;
                     needToUpdate = members[leastUsedKey];
                     updateFlag = true;
-                    //
-                    console.log(members[leastUsedKey]);
+
                     redis.hdel('members', leastUsedKey).then(function () {
                         redis.hset('members', leastUsedKey, JSON.stringify(members[leastUsedKey]));
                     });
                     break;
                 }
-                count++;
+
             }
-           
+
         }
 
         return redis.hset('members', socket.id, JSON.stringify(member)).then(function () {
-            // console.log("first member");
-            // console.log(member);
+
             return member;
         });
     });
@@ -141,18 +123,15 @@ io.on('connection', function (socket) {
         var member = values[0];
         var members = values[1];
         var messages = values[2];
-       
+
         io.emit('member_history', members);
         io.emit('message_history', messages);
 
         redis.publish('member_add', JSON.stringify(member));
-        if(updateFlag)
-        {
+        if (updateFlag) {
             redis.publish('pair', JSON.stringify(needToUpdate));
             updateFlag = false;
         }
-        
-        // 
 
         socket.on('send', function (message_text) {
             var date = moment.now();
@@ -168,43 +147,29 @@ io.on('connection', function (socket) {
         });
 
         socket.on('disconnect', async function () {
-            // const slave = await redis.hget('members', socket.id);
-            // const promise = redis.hget('members', socket.id);
-            
-            var get_master =
-                redis.hget('members', socket.id).then(function (slave) {
-                    //console.log(slave);
-                    var parze_slave = JSON.parse(slave);
-                if(!parze_slave.master_id) return null;
-                   return redis.hget('members', parze_slave.master_id).then(function (master) {
-                        console.log("get");
-                        return JSON.parse(master);
-                    });
-                   
-                });
-               var update_master = get_master.then(function(master){
-                   if(!master) return null;
-                    for(let button of master.buttons)
-                    {
-                        if(button.socket_id==socket.id) button.valid = false;
+            const slave = JSON.parse(await redis.hget('members', socket.id));
+
+            for (let button of slave.buttons) {
+                if (button.socket_id && button.valid) {
+                    let master = JSON.parse(await redis.hget('members', button.socket_id));
+                    for (let button_master of master.buttons) {
+                        if (button_master.socket_id === socket.id) button_master.valid = false;
                     }
-                    return redis.hdel('members', master.socket).then(function () {
-                        return redis.hset('members', master.socket, JSON.stringify(master)).then(function(){
-                            return master;
-                        });
-                        
+                    await redis.hdel('members', button.socket_id);
+                    redis.hset('members', button.socket_id, JSON.stringify(master));
+                    let delete_information = JSON.stringify({
+                        mastre_id: button.socket_id,
+                        slave_id: socket.id
                     });
-                });
-                Promise.all([get_master, update_master]).then(function (values)
-                {
-                    console.log("finish");
-                    console.log(values[1]);
-                    redis.hdel('members', socket.id);
-                    redis.publish('member_delete', JSON.stringify(socket.id));
-                    redis.publish('pair_termination', JSON.stringify(values[1]));
-                });
-               
+                    redis.publish('pair_termination', delete_information);
+                }
+
+            }
+            await redis.hdel('members', socket.id);
+            console.log(socket.id);
+            redis.publish('member_delete', JSON.stringify(socket.id));
             
+
         });
     }).catch(function (reason) {
         console.log('ERROR: ' + reason);
