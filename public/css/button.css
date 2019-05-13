@@ -7,6 +7,12 @@
     display: inline-block;
     height: 5vw;
     width: 5vw;
+
+    -webkit-animation: breath 2s; 
+          animation: breath 2s;
+
+  -webkit-animation-iteration-count:infinite;
+          animation-iteration-count:infinite;
   }
   /* .btn-blue:hover {
     background: #333;
@@ -22,6 +28,12 @@
     display: inline-block;
     height: 5vw;
     width: 5vw;
+
+    -webkit-animation: breath 2s; 
+          animation: breath 2s;
+
+  -webkit-animation-iteration-count:infinite;
+          animation-iteration-count:infinite;
   }
   /* .btn-red:hover {
     background: #333;
@@ -37,6 +49,7 @@
     display: inline-block;
     height: 5vw;
     width: 5vw;
+    
   }
   /* .btn-green:hover {
     background: #333;
@@ -69,3 +82,23 @@
     width: 5vw;
   }
   
+  @-webkit-keyframes breath {
+    0%    {opacity: 0.3;}
+    60%   {opacity:   1;}
+    100%  {opacity: 0.3;}
+  }
+  @-o-keyframes breath {
+    0%    {opacity: 0.3;}
+    60%   {opacity:   1;}
+    100%  {opacity: 0.3;}
+  }
+  @-moz-keyframes breath {
+    0%    {opacity: 0.3;}
+    60%   {opacity:   1;}
+    100%  {opacity: 0.3;}
+  }
+  @keyframes breath {
+    0%    {opacity: 0.3;}
+    60%   {opacity:   1;}
+    100%  {opacity: 0.3;}
+  }

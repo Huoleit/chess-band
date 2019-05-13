@@ -37,11 +37,12 @@ function add_redis_subscriber(subscriber_key) {
 
     redis_subscribers[subscriber_key] = client;
 }
-add_redis_subscriber('messages');
+add_redis_subscriber('feel_sad');
 add_redis_subscriber('member_add');
 add_redis_subscriber('member_delete');
 add_redis_subscriber('pair');
 add_redis_subscriber('pair_termination');
+add_redis_subscriber('give_comfort');
 
 io.on('connection', function (socket) {
     var get_members = redis.hgetall('members').then(function (redis_members) {
@@ -122,13 +123,13 @@ io.on('connection', function (socket) {
         });
     });
 
-    Promise.all([initialize_member, get_members, get_messages]).then(function (values) {
+    Promise.all([initialize_member, get_members]).then(function (values) {
         var member = values[0];
         var members = values[1];
-        var messages = values[2];
+        //var messages = values[2];
 
         io.emit('member_history', members);
-        io.emit('message_history', messages);
+        //io.emit('message_history', messages);
 
         redis.publish('member_add', JSON.stringify(member));
         if (updateFlag) {
@@ -141,18 +142,17 @@ io.on('connection', function (socket) {
             update_new = false;
         }
 
-        socket.on('send', function (message_text) {
-            var date = moment.now();
-            var message = JSON.stringify({
-                date: date,
-                username: member['username'],
-                avatar: member['avatar'],
-                message: message_text
-            });
-
-            redis.zadd('messages', date, message);
-            redis.publish('messages', message);
+        socket.on('send_sadness', function (sadness) {
+          
+            console.log(sadness);
+            redis.publish('feel_sad', JSON.stringify(sadness));
         });
+        socket.on('send_comfort', function (comfort) {
+          
+            //console.log(sadness);
+            redis.publish('give_comfort', JSON.stringify(comfort));
+        });
+        
 
         socket.on('disconnect', async function () {
             const slave = JSON.parse(await redis.hget('members', socket.id));

@@ -54,8 +54,8 @@
                     </div> -->
                     <div class="row">
                         <ul>
-                            <li v-for="(button, index) in buttons" v-bind:class="button.color" v-bind:id="'btn' + index"
-                                style="margin-right: 30px;"></li>
+                            <li v-for="(button, index) in buttons" v-on:click="send_sadness($event,index)"
+                                v-bind:class="button.color" v-bind:id="'btn' + index" style="margin-right: 30px;"></li>
                         </ul>
 
                     </div>
@@ -96,7 +96,7 @@
         );
 
 
-        new Vue({
+        var vue = new Vue({
             el: '#app',
             mixins: [VueFocus.mixin],
             data: {
@@ -111,9 +111,32 @@
                     { "color": "btn-grey", "valid": false, "socket_id": "" },]
             },
             methods: {
-                send: function () {
-                    socket.emit('send', this.message);
-                    this.message = '';
+                send_sadness: function (event, index) {
+                    //socket.emit('send', this.message);
+                    //this.message = '';
+                    console.log(event.target.id);
+                    console.log(index);
+                    if (this.buttons[index].valid) {
+                        if (this.buttons[index].color === "btn-green") {
+                            let sadness = {
+                                dst_id: this.buttons[index].socket_id,
+                                src_id: socket.id
+                            };
+                            socket.emit('send_sadness', sadness);
+                            this.buttons[index].color = 'btn-red';
+                        }
+                        else if(this.buttons[index].color === "btn-blue")
+                        {
+                            let comfort = {
+                                dst_id: this.buttons[index].socket_id,
+                                src_id: socket.id
+                            };
+                            socket.emit('send_comfort', comfort);
+                            this.buttons[index].color = 'btn-green';
+                        }
+
+                    }
+
                 },
                 formatMemberDate: function (date) {
                     return moment(date).format("h:mm:ss a");
@@ -124,18 +147,12 @@
 
             },
             mounted: function () {
-                socket.on('messages', function (message) {
-                    this.messages.push(message);
-                }.bind(this));
+                // socket.on('messages', function (message) {
+                //     this.messages.push(message);
+                // }.bind(this));
 
                 socket.on('member_add', function (member) {
                     Vue.set(this.members, member.socket, member);
-                    for (let button in member.buttons) {
-
-                        if (member.buttons[button].valid) {
-                            this.buttons[button].color = 'btn-green';
-                        }
-                    }
                     if (member.socket == socket.id) {
                         this.username = member.username;
                     }
@@ -160,23 +177,40 @@
                 }.bind(this));
 
                 socket.on('pair_termination', function (delete_information) {
-                    
-                    if(delete_information.master_id === socket.id)
-                        {
-                            for(let button of this.buttons)
-                            {
-                                if(button.socket_id === delete_information.slave_id)
-                                {
-                                    button.color = 'btn-grey';
-                                    button.valid = false;
-                                }
+
+                    if (delete_information.master_id === socket.id) {
+                        for (let button of this.buttons) {
+                            if (button.socket_id === delete_information.slave_id && button.valid) {
+                                button.color = 'btn-grey';
+                                button.valid = false;
                             }
                         }
+                    }
                 }.bind(this));
 
-                socket.on('message_history', function (messages) {
-                    this.messages = messages;
+                socket.on('feel_sad', function (sadness) {
+                    if (sadness.dst_id === socket.id) {
+                        for (let button of this.buttons) {
+                            if (button.socket_id === sadness.src_id && button.valid) {
+                                button.color = 'btn-blue';
+                            }
+                        }
+                    }
                 }.bind(this));
+
+                socket.on('give_comfort', function (comfort) {
+                    if (comfort.dst_id === socket.id) {
+                        for (let button of this.buttons) {
+                            if (button.socket_id === comfort.src_id && button.valid) {
+                                button.color = 'btn-green';
+                            }
+                        }
+                    }
+                }.bind(this));
+
+                // socket.on('message_history', function (messages) {
+                //     this.messages = messages;
+                // }.bind(this));
 
                 socket.on('member_history', function (members) {
                     this.members = members;
