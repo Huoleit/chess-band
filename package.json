@@ -4,8 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node ./server.js",
-    "watch": "watch 'node ./server.js' ./server.js"
+    "start": "node ./server.js"
   },
   "author": "",
   "license": "ISC",
@@ -15,8 +14,6 @@
     "ioredis": "^2.4.3",
     "lodash": "^4.17.11",
     "moment": "^2.24.0",
-    "npm-watch": "^0.6.0",
-    "socket.io": "^2.2.0",
-    "watch": "^1.0.2"
+    "socket.io": "^2.2.0"
   }
 }

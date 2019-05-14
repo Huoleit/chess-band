@@ -5,7 +5,7 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var port = process.env.PORT || 3000;
+var port = 80;
 
 var Redis = require('ioredis');
 var redis_address = process.env.REDIS_ADDRESS || 'redis://127.0.0.1:6379';
