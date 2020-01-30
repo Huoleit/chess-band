@@ -126,6 +126,7 @@ io.on('connection', function (socket) {
     Promise.all([initialize_member, get_members]).then(function (values) {
         var member = values[0];
         var members = values[1];
+        console.log(values[1]);
         //var messages = values[2];
 
         io.emit('member_history', members);
