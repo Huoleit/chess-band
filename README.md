@@ -1,6 +1,12 @@
 # chess-band
 
-**Chess-band** demostrates how web clients interact with each other on the frontend and how theyy communicate with a backend service using Node.js with the support of Webscocket protocol  and Redis database.
+**Chess-band** is a backend service of a wearable band. It is based on Node.js and with the support of the Webscocket protocol  and Redis database. 
+
+The frontend part is only for visualizing the overall data flow and concepts.
+
+## Background
+
+My friend Victor and I want to design a  wearable band that can send anonymous signals to a set of randomly assigned partners. You do not where does a message comes from, but it is there. Therefore, we need a backend service and that is why I come out with this repo. To be honest, the final result is not as good as we expect before. But it is indeed a good practice to learn something about Websocket and Redis.
 
 ## Preview
 ![index image](images/index.png)
