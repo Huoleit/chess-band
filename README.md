@@ -6,7 +6,7 @@ The frontend part is only for visualizing the overall data flow and concepts.
 
 ## Background
 
-My friend Victor and I want to design a  wearable band that can send anonymous signals to a set of randomly assigned partners. You do not where does a message comes from, but it is there. Therefore, we need a backend service and that is why I come out with this repo. To be honest, the final result is not as good as we expect before. But it is indeed a good practice to learn something about Websocket and Redis.
+My friend Victor and I want to design a  wearable band that can send anonymous signals to a set of randomly assigned partners. You do not know where does a message comes from, but it is there. Therefore, we need a backend service and that is why I come out with this repo. To be honest, the final result is not as good as we expect before. But it is indeed a good practice to learn something about Websocket and Redis.
 
 ## Preview
 ![index image](images/index.png)
