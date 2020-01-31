@@ -16,7 +16,7 @@
 <body>
     <div id="app">
         <nav class="navbar navbar-inverse">
-            <a class="navbar-brand" href="#">I don't know what to put here</a>
+            <a class="navbar-brand" href="#">Chess band</a>
         </nav>
         <div class="container-fluid">
             <div class="row">
@@ -30,7 +30,7 @@
                         <ul class="list-group members-group">
                             <li class="list-group-item member-item justify-content-between bg-faded"
                                 v-for="(value, key) in members">
-                                <img v-bind:src="value.avatar" class="rounded-circle mr-1">
+                                <img v-bind:src="value.avatar" class="rounded-circle mr-1 image-profile">
                                 <small> {{ value.username }}</small>
                             </li>
                         </ul>
@@ -66,17 +66,6 @@
     <script>
         var socket = io();
         $(document).ready(
-            // function () {
-            //     $("#btn1").click(
-            //         function () {
-            //             $(this).removeClass("btn-grey").addClass("btn-green");
-            //             // console.log(moment.now());
-            //         }
-
-            //     );
-
-
-            // }
         );
 
 
