@@ -63,7 +63,8 @@ io.on('connection', function (socket) {
         var member = {
             socket: socket.id,
             username: username,
-            avatar: "//api.adorable.io/avatars/30/" + username + '.png',
+            // avatar: "//api.adorable.io/avatars/30/" + username + '.png',
+            avatar: faker.image.avatar(),
             buttons: [
             { "socket_id": '', "valid": false },
             { "socket_id": '', "valid": false },
@@ -157,20 +158,22 @@ io.on('connection', function (socket) {
 
         socket.on('disconnect', async function () {
             const slave = JSON.parse(await redis.hget('members', socket.id));
-
-            for (let button of slave.buttons) {
-                if (button.socket_id && button.valid) {
-                    let master = JSON.parse(await redis.hget('members', button.socket_id));
-                    for (let button_master of master.buttons) {
-                        if (button_master.socket_id === socket.id) button_master.valid = false;
+            if(slave){
+                for (let button of slave.buttons) {
+                    if (button.socket_id && button.valid) {
+                        let master = JSON.parse(await redis.hget('members', button.socket_id));
+                        for (let button_master of master.buttons) {
+                            if (button_master.socket_id === socket.id) button_master.valid = false;
+                        }
+                        await redis.hdel('members', button.socket_id);
+                        redis.hset('members', button.socket_id, JSON.stringify(master));
+                        let delete_information = JSON.stringify({
+                            master_id: button.socket_id,
+                            slave_id: socket.id
+                        });
+                        redis.publish('pair_termination', delete_information);
                     }
-                    await redis.hdel('members', button.socket_id);
-                    redis.hset('members', button.socket_id, JSON.stringify(master));
-                    let delete_information = JSON.stringify({
-                        master_id: button.socket_id,
-                        slave_id: socket.id
-                    });
-                    redis.publish('pair_termination', delete_information);
+    
                 }
 
             }
