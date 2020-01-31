@@ -1,3 +1,4 @@
+require('dotenv').config();
 var faker = require('faker');
 var moment = require('moment');
 
@@ -5,7 +6,7 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var port = 80;
+var port = process.env.PORT || 8008;
 
 var Redis = require('ioredis');
 var redis_address = process.env.REDIS_ADDRESS || 'redis://127.0.0.1:6379';
